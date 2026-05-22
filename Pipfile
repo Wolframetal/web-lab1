@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "*"
+uvicorn = "*"
+pillow = "*"
+numpy = "*"
+matplotlib = "*"
+python-multipart = "*"
+jinja2 = "*"
+aiofiles = "*"
+
+[dev-packages]
+pytest = "*"
+httpx = "*"
+
+[requires]
+python_version = "3.12"
+python_full_version = "3.12.3"
