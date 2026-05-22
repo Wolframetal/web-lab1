@@ -10,8 +10,8 @@ pillow = "*"
 numpy = "*"
 matplotlib = "*"
 python-multipart = "*"
-jinja2 = "*"
 aiofiles = "*"
+jinja2 = "*"
 
 [dev-packages]
 pytest = "*"
