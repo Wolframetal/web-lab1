@@ -7,6 +7,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 
+from fastapi import Form, File, UploadFile
+from typing import List
+import hashlib
+from PIL import ImageDraw
+
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -70,4 +75,47 @@ async def make_image(request: Request):
     # передаем в шаблон две переменные, к которым сохранили url
     template = env.get_template("image.html")
     content = template.render(im_st=image_st, im_dyn=image_dyn)
+    return HTMLResponse(content=content)
+
+# Обработка POST запроса с формой
+@app.post("/image_form", response_class=HTMLResponse)
+async def process_image_form(
+    request: Request,
+    name_op: str = Form(),
+    number_op: int = Form(),
+    r: int = Form(),
+    g: int = Form(),
+    b: int = Form(),
+    files: List[UploadFile] = File(description="Multiple files as UploadFile")
+):
+    ready = False
+    images = []
+    
+    if files and len(files) > 0 and files[0].filename:
+        ready = True
+        
+        # Создаем хешированные имена файлов
+        images = ["static/" + hashlib.sha256(file.filename.encode('utf-8')).hexdigest() + ".jpg" 
+                  for file in files]
+        
+        # Читаем содержимое файлов
+        content = [await file.read() for file in files]
+        
+        # Создаем и обрабатываем изображения
+        for i, con in enumerate(content):
+            img = Image.open(io.BytesIO(con)).convert("RGB").resize((200, 200))
+            draw = ImageDraw.Draw(img)
+            # Рисуем эллипс
+            draw.ellipse((100, 100, 150, 200 + number_op), fill=(r, g, b), outline=(0, 0, 0))
+            img.save("./" + images[i], 'JPEG')
+    
+    template = env.get_template("forms.html")
+    content = template.render(request=request, ready=ready, images=images)
+    return HTMLResponse(content=content)
+
+# Отображение HTML формы (GET запрос)
+@app.get("/image_form", response_class=HTMLResponse)
+async def show_image_form(request: Request):
+    template = env.get_template("forms.html")
+    content = template.render(request=request, ready=False, images=[])
     return HTMLResponse(content=content)
