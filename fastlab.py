@@ -12,6 +12,8 @@ from typing import List
 import hashlib
 from PIL import ImageDraw
 
+import httpx
+
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -86,8 +88,23 @@ async def process_image_form(
     r: int = Form(),
     g: int = Form(),
     b: int = Form(),
-    files: List[UploadFile] = File(description="Multiple files as UploadFile")
+    files: List[UploadFile] = File(description="Multiple files as UploadFile"),
+    recaptcha_token: str = Form(...)
 ):
+    
+        # проверяем reCAPTCHA
+    is_valid = await verify_recaptcha(recaptcha_token)
+    if not is_valid:
+        # Если капча не пройдена, возвращаем ошибку или перерисовываем форму с предупреждением
+        template = env.get_template("forms.html")
+        content = template.render(
+            request=request, 
+            ready=False, 
+            images=[], 
+            error_message="Ошибка проверки reCAPTCHA. Пожалуйста, попробуйте снова."
+        )
+        return HTMLResponse(content=content, status_code=400)
+    
     ready = False
     images = []
     
@@ -119,3 +136,24 @@ async def show_image_form(request: Request):
     template = env.get_template("forms.html")
     content = template.render(request=request, ready=False, images=[])
     return HTMLResponse(content=content)
+
+async def verify_recaptcha(token: str) -> bool:
+    """Асинхронно проверяет reCAPTCHA токен через Google API."""
+    if not token:
+        return False
+        
+    url = "https://www.google.com/recaptcha/api/siteverify"
+    data = {
+        "secret": RECAPTCHA_SECRET_KEY,
+        "response": token
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, data=data)
+            result = response.json()
+            # Возвращаем True, если верификация успешна
+            return result.get("success", False)
+    except Exception:
+        # В случае ошибки сети или других проблем
+        return False

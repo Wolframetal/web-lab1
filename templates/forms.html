@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Форма с reCAPTCHA</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <title>Форма обработки изображений</title>
     <link href="/static/styles.css" rel="stylesheet">
     <style>
@@ -86,7 +88,7 @@
 <body>
     <h2>Форма ввода данных для изображений</h2>
     
-    <form action="/image_form" enctype="multipart/form-data" method="post">
+    <form action="/image_form" enctype="multipart/form-data" method="post" onsubmit="return validateForm(event)">
         <div class="form-group">
             <label for="name_op">Имя операции:</label>
             <input type="text" id="name_op" name="name_op" value="operation" />
@@ -132,9 +134,18 @@
             <input type="file" name="files" multiple accept="image/*">
         </div>
         
+        <!-- Скрытое поле для хранения токена reCAPTCHA -->
+        <input type="hidden" id="recaptcha_token" name="recaptcha_token" value="">
+
+        <div class="form-group">
+            <!-- Виджет reCAPTCHA v2 -->
+            <div class="g-recaptcha" data-sitekey=""></div>
+        </div>
+
         <div class="form-group">
             <input type="submit" value="Отправить" />
         </div>
+
     </form>
     
     {% if ready and images %}
@@ -148,5 +159,26 @@
             {% endfor %}
         </div>
     {% endif %}
+
+    <script>
+        function validateForm(event) {
+            event.preventDefault(); // Останавливаем стандартную отправку
+            
+            // Получаем ответ reCAPTCHA
+            var recaptchaResponse = grecaptcha.getResponse();
+            
+            if (recaptchaResponse.length === 0) {
+                alert("Пожалуйста, подтвердите, что вы не робот.");
+                return false;
+            }
+            
+            // Вставляем токен в скрытое поле
+            document.getElementById('recaptcha_token').value = recaptchaResponse;
+            
+            // Отправляем форму через JavaScript
+            document.getElementById("uploadForm").submit();
+            return true;
+        }
+    </script>
 </body>
 </html>
