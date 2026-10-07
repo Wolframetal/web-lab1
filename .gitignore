@@ -1,1 +1,5 @@
 /.venv
+Pipfile.lock
+captcha_key.env
+/static/*.jpg
+/static/*.png
