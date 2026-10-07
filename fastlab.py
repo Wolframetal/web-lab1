@@ -137,8 +137,8 @@ async def show_image_form(request: Request):
     content = template.render(request=request, ready=False, images=[])
     return HTMLResponse(content=content)
 
+    #Асинхронно проверяет reCAPTCHA токен через Google API.
 async def verify_recaptcha(token: str) -> bool:
-    """Асинхронно проверяет reCAPTCHA токен через Google API."""
     if not token:
         return False
         
